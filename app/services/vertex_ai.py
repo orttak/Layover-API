@@ -9,13 +9,24 @@ from typing import Dict, Any, Optional, List, Tuple
 from google import genai
 from google.genai.types import (
     GenerateContentConfig,
-    GoogleMaps,
     HttpOptions,
     Tool,
     ToolConfig,
-    RetrievalConfig,
-    LatLng
 )
+try:
+    from google.genai.types import GoogleMaps  # type: ignore
+    HAS_GOOGLE_MAPS = True
+except ImportError:
+    GoogleMaps = None  # type: ignore
+    HAS_GOOGLE_MAPS = False
+
+try:
+    from google.genai.types import RetrievalConfig, LatLng  # type: ignore
+    HAS_RETRIEVAL_CONFIG = True
+except ImportError:
+    RetrievalConfig = None  # type: ignore
+    LatLng = None  # type: ignore
+    HAS_RETRIEVAL_CONFIG = False
 
 from app.prompts.manager import PromptManager
 
@@ -127,13 +138,17 @@ class VertexAIService:
         # Prompt manager for config-based prompts
         self.prompt_manager = prompt_manager or PromptManager()
         
-        # Google Maps tool configuration
-        self._maps_tool = Tool(
-            google_maps=GoogleMaps(
-                enable_widget=False  # Return venue data, not widget tokens
+        # Google Maps tool configuration (optional, SDK-version dependent)
+        self._maps_tool = None
+        if HAS_GOOGLE_MAPS and GoogleMaps is not None:
+            self._maps_tool = Tool(
+                google_maps=GoogleMaps(
+                    enable_widget=False  # Return venue data, not widget tokens
+                )
             )
-        )
-        logger.info("Google Maps tool initialized")
+            logger.info("Google Maps tool initialized")
+        else:
+            logger.warning("GoogleMaps type is unavailable in installed google-genai version; running without Maps tool")
     
     @staticmethod
     def get_airport_coordinates(airport_code: str) -> Tuple[float, float]:
@@ -182,22 +197,29 @@ class VertexAIService:
             latitude, longitude = AIRPORT_COORDINATES["DEFAULT"]
             logger.info(f"Using default coordinates: ({latitude}, {longitude})")
         
-        return GenerateContentConfig(
-            temperature=temperature,
-            top_p=top_p,
-            top_k=top_k,
-            max_output_tokens=max_output_tokens,
-            tools=[self._maps_tool],
-            tool_config=ToolConfig(
-                retrieval_config=RetrievalConfig(
-                    lat_lng=LatLng(
-                        latitude=latitude,
-                        longitude=longitude
-                    ),
-                    language_code="en_US"
+        config_kwargs: Dict[str, Any] = {
+            "temperature": temperature,
+            "top_p": top_p,
+            "top_k": top_k,
+            "max_output_tokens": max_output_tokens,
+        }
+
+        if self._maps_tool is not None:
+            config_kwargs["tools"] = [self._maps_tool]
+            if HAS_RETRIEVAL_CONFIG and RetrievalConfig is not None and LatLng is not None:
+                config_kwargs["tool_config"] = ToolConfig(
+                    retrieval_config=RetrievalConfig(
+                        lat_lng=LatLng(
+                            latitude=latitude,
+                            longitude=longitude
+                        ),
+                        language_code="en_US"
+                    )
                 )
-            )
-        )
+            else:
+                logger.warning("RetrievalConfig/LatLng unavailable in installed google-genai version; skipping tool_config")
+
+        return GenerateContentConfig(**config_kwargs)
     
     def get_structured_itinerary(
         self,
@@ -296,14 +318,16 @@ Kritik Kurallar:
             # Generation config with STRICT structured output and LOW temperature
             # Note: Tools/grounding only work with Vertex AI, not API key mode
             if self.client_type == "vertex_ai":
-                generation_config = GenerateContentConfig(
-                    temperature=0.2,
-                    top_p=0.8,
-                    top_k=20,
-                    max_output_tokens=4096,
-                    response_mime_type="application/json",
-                    tools=[self._maps_tool],
-                    tool_config=ToolConfig(
+                config_kwargs: Dict[str, Any] = {
+                    "temperature": 0.2,
+                    "top_p": 0.8,
+                    "top_k": 20,
+                    "max_output_tokens": 4096,
+                }
+                if self._maps_tool is not None:
+                    config_kwargs["tools"] = [self._maps_tool]
+                if HAS_RETRIEVAL_CONFIG and RetrievalConfig is not None and LatLng is not None:
+                    config_kwargs["tool_config"] = ToolConfig(
                         retrieval_config=RetrievalConfig(
                             lat_lng=LatLng(
                                 latitude=latitude,
@@ -312,7 +336,7 @@ Kritik Kurallar:
                             language_code="en_US"
                         )
                     )
-                )
+                generation_config = GenerateContentConfig(**config_kwargs)
                 logger.info(f"🚀 Calling gemini-2.5-flash with MASTER PROMPT + Maps Tool (Vertex AI mode, temp=0.2)...")
             else:
                 # API key mode - no tools/grounding support
@@ -320,8 +344,7 @@ Kritik Kurallar:
                     temperature=0.2,
                     top_p=0.8,
                     top_k=20,
-                    max_output_tokens=4096,
-                    response_mime_type="application/json"
+                    max_output_tokens=4096
                 )
                 logger.info(f"🚀 Calling gemini-2.5-flash with MASTER PROMPT (API key mode, temp=0.2)...")
             

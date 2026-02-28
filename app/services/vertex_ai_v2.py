@@ -10,7 +10,6 @@ app = FastAPI(title="Layover Architect API")
 
 # --- KONFİGÜRASYON ---
 # .env dosyasında saklaman önerilir
-GOOGLE_GEMINI_API_KEY = "AIzaSy..." 
 client = genai.Client(api_key=GOOGLE_GEMINI_API_KEY, http_options={'api_version': 'v1alpha'})
 
 # --- MODELLER (Request/Response Şemaları) ---

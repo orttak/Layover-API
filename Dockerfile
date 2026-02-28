@@ -1,44 +1,45 @@
-# Use official Python runtime as base image
-FROM python:3.10-slim
+# 1. En güncel stabil Python sürümüne geçtik
+FROM python:3.12-slim
 
-# Set working directory
+# 2. Çalışma dizini
 WORKDIR /app
 
-# Set environment variables
+# 3. Ortam değişkenleri (PYTHONPATH'e /app ekleyerek import hatalarını çözüyoruz)
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/app
 
-# Install system dependencies
+# 4. Sistem bağımlılıkları (gcc ve döküman derleyiciler bazen pydantic/uvloop için gerekir)
 RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     gcc \
+    libc6-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# 5. Bağımlılıkları kopyala
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# 6. PIP ve Paket Kurulumu (Kritik: google-genai v1.2.0+ zorlaması yapıyoruz)
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY app/ ./app/
+# 7. Uygulama kodunu kopyala
+# (.dockerignore dosyanızda .env, __pycache__, .git olduğundan emin olun)
+COPY . .
 
-# Copy environment file (optional - use GCP Secret Manager in production)
-COPY .env .env
-
-# Create non-root user for security
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
+# 8. Güvenlik: Non-root user
+RUN useradd -m appuser && chown -R appuser /app
 USER appuser
 
-# Expose port (Cloud Run uses 8080 by default)
+# 9. Cloud Run Portu
 EXPOSE 8080
 
-# Health check
+# 10. Health Check (Bağımlılıksız, standart kütüphane ile)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8080/api/v1/health', timeout=5)"
+    CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/docs')"
 
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
+# 11. Başlatma komutu
+# Not: Eğer main.py dosyan app/ klasörünün içindeyse 'app.main:app' doğrudur.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers"]
