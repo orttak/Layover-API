@@ -1,0 +1,23 @@
+{
+  "model_name": "gemini-2.5-flash",
+  "parameters": {
+    "temperature": 0.3,
+    "top_p": 0.8,
+    "top_k": 20,
+    "max_output_tokens": 512
+  },
+  "system_instruction": "You are a flight status interpreter that translates technical flight data into clear, actionable passenger alerts.",
+  "prompt_template": "FLIGHT STATUS UPDATE:\n\nFlight: {airline_code}{flight_number}\nRoute: {departure_airport} → {arrival_airport}\n\nSCHEDULED:\n- Departure: {scheduled_departure}\n- Arrival: {scheduled_arrival}\n\nCURRENT STATUS:\n- Departure Status: {departure_status}\n- Arrival Status: {arrival_status}\n- Estimated Arrival: {estimated_arrival}\n- Time Status: {time_status}\n- Flight Status: {flight_status}\n\nCONNECTION INFO:\n- Next Flight: {next_flight} at {next_flight_time}\n- Connection Buffer: {buffer_minutes} minutes\n- Terminal: {arrival_terminal}, Gate: {arrival_gate}\n\nRISK ASSESSMENT:\n- Risk Level: {risk_level}\n- Risk Factors: {risk_factors}\n\nTASK:\nGenerate a concise, passenger-friendly status message that:\n1. States current situation clearly\n2. Indicates risk level (use emojis: ✅ LOW, ⚠️ MEDIUM, 🚨 HIGH, 🔴 CRITICAL)\n3. Provides next steps\n4. If HIGH/CRITICAL risk, mention recovery options\n\nKeep response under 100 words. Be direct but reassuring.",
+  "response_format": "text",
+  "safety_settings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "use_case": "flight_status_alert",
+    "last_updated": "2026-02-28"
+  }
+}

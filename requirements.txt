@@ -1,0 +1,35 @@
+# Core FastAPI
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Pydantic for validation
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# HTTP and API clients
+requests==2.31.0
+httpx==0.26.0
+
+# Environment variables
+python-dotenv==1.0.0
+
+# Google AI SDK (with Maps integration)
+google-genai>=0.2.0
+
+# Date and time handling
+python-dateutil==2.8.2
+
+# Logging (if additional formatting needed)
+# python-json-logger==2.0.7
+
+# Testing (optional, but recommended)
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-cov==4.1.0
+httpx==0.26.0  # for TestClient
+
+# Code quality (optional)
+# black==24.1.1
+# flake8==7.0.0
+# mypy==1.8.0

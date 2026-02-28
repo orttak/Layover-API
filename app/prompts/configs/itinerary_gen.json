@@ -1,0 +1,27 @@
+{
+  "model_name": "gemini-2.5-flash",
+  "parameters": {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "top_k": 40,
+    "max_output_tokens": 2048
+  },
+  "system_instruction": "You are a real-time travel concierge specializing in helping passengers who missed their connecting flights. Your role is to create practical, verified recovery plans using current information. You MUST use Google Search to verify the current status of venues, opening hours, stroller accessibility, and family-friendly facilities (especially for passengers with babies). Always prioritize safety, accessibility, and real-time accuracy.",
+  "prompt_template": "SITUATION:\nPassenger flying Hamburg (HAM) → Madrid (MAD) → Bogota (BOG) has missed their connection.\n\nFLIGHT DETAILS:\n- First flight delay: {delay_minutes} minutes\n- Arrived at Madrid Terminal: {arrival_terminal}\n- Original connection buffer: {buffer_minutes} minutes\n- Flight status: {flight_status}\n\nPASSENGER PROFILE:\n- Passenger Type: {passenger_type}\n- Budget: {budget} EUR\n- Preferences: {preferences}\n- Duration available: {duration_hours} hours\n\nCURRENT CONTEXT:\n- Weather: {weather_info}\n- Traffic: {traffic_info}\n\nTASK:\nUse Google Search to verify current information and create a comprehensive Madrid recovery plan with:\n\n1. IMMEDIATE ACTIONS (15 min):\n   - Emergency contacts at Terminal {arrival_terminal}\n   - Rebooking options (verify current availability)\n   - Baggage handling instructions\n\n2. ACCOMMODATION:\n   - 2-3 hotel options within budget (verify current prices and availability)\n   - For families: MUST verify baby crib availability and nursery facilities\n   - Location (near airport vs city center)\n   - How to get there from Terminal {arrival_terminal}\n\n3. MADRID MINI-ITINERARY ({duration_hours}h):\n   - VERIFIED activities matching preferences: {preferences}\n   - For families with babies: Check stroller accessibility, changing facilities, quiet areas\n   - Use Google Search to confirm: Opening hours, current status (open/closed), accessibility\n   - Routes optimized for time and {passenger_type} needs\n   - Cost breakdown with current prices\n   - Must be back at airport 3 hours before next flight\n\n4. LOGISTICS:\n   - Metro/transport from Terminal {arrival_terminal}\n   - For families: Elevator access, wide gates for strollers\n   - Timeline to return for rescheduled flight\n   - Emergency numbers (hospitals, police, consulate)\n\nIMPORTANT:\n- For 'family_with_baby' passengers: Prioritize baby-changing facilities, quiet venues, and stroller-friendly routes\n- Verify ALL venue information using Google Search before recommending\n- Include accessibility information for each venue\n- Provide specific addresses and phone numbers\n\nOUTPUT FORMAT:\nReturn response as structured JSON with keys: immediate_actions, accommodation, itinerary, logistics, estimated_total_cost, accessibility_notes\n\nMake it empathetic, practical, and VERIFIED. Turn this delay into a safe, positive Madrid experience!",
+  "response_format": "json",
+  "safety_settings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    },
+    {
+      "category": "HARM_CATEGORY_HATE_SPEECH",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "use_case": "madrid_recovery_itinerary",
+    "last_updated": "2026-02-28"
+  }
+}
